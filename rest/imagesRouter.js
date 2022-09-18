@@ -33,23 +33,8 @@ async function addToRecents(item){
 }
 // GOOGLE APIS
 const customsearch = google.customsearch("v1");
-async function searchImages(q,start,num){
-	console.log("calls");
-	/*let items  = */await customsearch.cse.list({
-		auth: process.env.MY_GOOGLE_CS_API_KEY,
-		cx: process.env.MY_SEARCH_ENGINE_ID,
-		q, 
-		start, 
-		num
-	})
-		.then( result => result.data)
-		.then(data => {
-			let {items} = data;
-			console.log(items);
-		})
-	//console.log(items);
-}
-imagesRouter.get("/v1/query/random/:q",async (req,res)=>{
+
+imagesRouter.get("/query/random/:q",async (req,res)=>{
 	let response = await fetch("http://localhost:4001/images/v1/query/"+req.params.q,{
 		method: 'GET',
 		headers: {token: req.headers.token},
@@ -59,7 +44,8 @@ imagesRouter.get("/v1/query/random/:q",async (req,res)=>{
 	let i = Math.floor(Math.random() * 10);
 	res.json({image: items.images[i]})
 })
-imagesRouter.get("/v1/query/:q", (req,res)=>{
+
+imagesRouter.get("/query/:q", (req,res)=>{
 	const q = req.params.q;
 	const start = (req.query.page-1) * 10 || 0;
 	const num = 10; // anything more throws bad request >:|
@@ -106,59 +92,21 @@ imagesRouter.get("/v1/query/:q", (req,res)=>{
 })
 
 // freecodecamp image search api project main endpoint
-imagesRouter.get("/v1/query/metadata/:q", async (req,res)=>{
-	const q = req.params.q;
-	const start = (req.query.page -1)* 10 || 0;
-	const num = 10;
-	console.log(q, start, num);
-
-	customsearch.cse.list({
-		auth: process.env.MY_GOOGLE_CS_API_KEY,
-		cx: process.env.MY_SEARCH_ENGINE_ID,
-		q, 
-		start, 
-		num
-	})
-		.then(async result => result.data)
-		.then(async (result) => {
-			let {items} = result;
-			let resp = new Array();
-			for(let i = 0; i<items.length; i++) {
-				let url = (((items[i].pagemap || {}).cse_image || {})[0] || {}).src;
-				if(!url) continue;
-				let img = items[i];
-				let itemToPush = {
-					"description" : img.title,
-					"parent_page" : img.link,
-					"url": url
-				}
-				try {
-					itemToPush.thumbnail =  img.pagemap.cse_thumbnail.map(o => ({
-						"url" : o.src,
-						"height": parseInt(o.height),
-						"width" : parseInt(o.width)
-					}))[0];
-				} catch{}
-				resp.push(itemToPush);
-			}
-
-			await Promise.all(resp.map(async (item) =>{
-				let metadata = await getImageMetadata(item.url);
-				if(metadata) {
-					item.height = metadata.height;
-					item.width = metadata.width;
-					item.size = metadata.size;
-					item.type = "image/" + metadata.format;	
-				}	
-			}))
-			const data = {
-				images: resp
-			}
-			console.log(data);
-			res.status(200).send(data);
-		})
-		.catch((err) => {
-			console.log(err);
-			res.status(500).send(err);
-		});
+imagesRouter.get("/query/metadata/:q", async (req,res)=>{
+	let response = await fetch("http://localhost:4001/images/query/"+req.params.q,{
+		method: 'GET',
+		headers: {token: req.headers.token},
+		query: req.query
+	});
+	let items = await response.json();
+	await Promise.all(items.images.map(async (item) =>{
+		let metadata = await getImageMetadata(item.url);
+		if(metadata) {
+			item.height = metadata.height;
+			item.width = metadata.width;
+			item.size = metadata.size;
+			item.type = "image/" + metadata.format;	
+		}	
+	}))
+	res.status(200).json(items);
 })
