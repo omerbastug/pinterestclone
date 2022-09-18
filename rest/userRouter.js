@@ -39,7 +39,8 @@ let userSchema = new mongoose.Schema({
 	password: String,
 	fullname : String,
 	age :  Number,
-}, {"collection" : "users"});
+	posts : [{url : String, likes : [String]}]
+}, {"collection" : "Users"});
 
 let User = new mongoose.model("User", userSchema)
 
@@ -60,6 +61,29 @@ userRouter.post("/register", (req,res) => {
 	})
 })
 
+userRouter.post("/makepost",(req,res)=>{
+	User.findById(res.get("_id"),(err,doc)=>{
+		if(!err){
+			doc.toObject();
+			if(!doc.posts){
+				doc.posts = new Array();
+			}
+			doc.posts.push({
+				url : req.body.url,
+				likes : new Array()
+			})
+			doc.save((err) => {
+				if(err){ 
+					console.log(err)
+					res.status(500).json({"err" : "DB failure"})
+				}
+				else {
+					res.json({"success":"post made"})
+				}
+		})
+		}
+	});
+});
 userRouter.post("/login" , async (req,res)=> {
 	let user = await User.findOne(({email: req.body.email})).exec();
 	if(!user){
