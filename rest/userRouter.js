@@ -1,4 +1,4 @@
-import {Router} from "express";
+import e, {Router} from "express";
 import mongoose from "mongoose";
 export const userRouter = Router();
 import jwt from "jsonwebtoken";
@@ -44,6 +44,18 @@ let userSchema = new mongoose.Schema({
 }, {"collection" : "users"});
 
 let User = new mongoose.model("User", userSchema)
+userRouter.post("/login" , async (req,res)=> {
+	let user = await User.findOne(({email: req.body.email})).exec();
+	if(!user){
+		res.status(403).json({"err":"Wrong email"})
+	}
+	if(user.password === req.body.password){
+		let token = jwt.sign({ data: user._id }, process.env.JWT_SECRET);
+		res.status(200).json({token})
+	} else {
+		res.status(401).json({"err": "Wrong password"})
+	}
+})
 
 userRouter.post("/register", (req,res) => {
 	let {email,password,fullname,age} = req.body;
@@ -60,6 +72,18 @@ userRouter.post("/register", (req,res) => {
 			//done(null,data)
 		}
 	})
+})
+
+userRouter.get('/',(req,res)=>{
+	User.findById(res.get("_id"),
+	(err,doc)=>{
+		if(err) {
+			console.log(err);
+			res.status(500).json({"err":"user not found"})
+		} else {
+			res.status(200).json(doc)
+		}
+	});
 })
 
 userRouter.post("/makepost",(req,res)=>{
@@ -91,48 +115,63 @@ userRouter.post("/likepost",(req,res)=>{
 		(err,doc)=>{
 			if(err){
 				console.log(err);
-				res.status(500).json({"err":"user not found"})
+				res.status(400).json({"err":"user not found"})
 			} else {
 				let i  = doc.posts.findIndex(element => {
 					return element.url === req.body.url;
 				})
-				doc.posts[i].likes.push(res.get("_id"))
-				doc.save((err) => {
-					if(err){ 
-						console.log(err)
-						res.status(500).json({"err" : "DB failure"})
-					}
-					else {
-						res.json({"success":"post made"})
-					}
-				})			
+				if(i!==-1){
+					doc.posts[i].likes.push(res.get("_id"))
+					doc.save((err) => {
+						if(err){ 
+							console.log(err)
+							res.status(500).json({"err" : "DB failure"})
+						}
+						else {
+							res.json({"success":"post made"})
+						}
+					})	
+				} else {
+					res.status(400).json({"err":"Post not found, wrong url"})
+				}
+						
 			}
 		})
 })
-userRouter.get('/',(req,res)=>{
-	User.findById(res.get("_id"),
-	(err,doc)=>{
-		if(err) {
-			console.log(err);
-			res.status(500).json({"err":"user not found"})
-		} else {
-			res.status(200).json(doc)
-		}
-	});
+
+userRouter.delete("/likepost",(req,res)=>{
+	User.findById(req.body._id,
+		(err,doc)=>{
+			if(err){
+				console.log(err);
+				res.status(400).json({"err":"user not found"})
+			} else {
+				let i  = doc.posts.findIndex(element => {
+					return element.url === req.body.url;
+				})
+				if(i!==-1){
+					let likei = doc.posts[i].likes.indexOf(res.get("_id"))
+					if (likei !== -1) {
+						doc.posts[i].likes.splice(likei, 1);
+						doc.save((err) => {
+							if(err){ 
+								console.log(err)
+								res.status(500).json({"err" : "DB failure"})
+							}
+							else {
+								res.json({"success":"like deleted"})
+							}
+						})	
+					} else {
+						res.status(400).json({"err":"Post not liked"})
+					}	
+				} else {
+					res.status(400).json({"err":"Post not found, wrong url"})
+				}	
+			}
+		})
 })
-userRouter.post("/login" , async (req,res)=> {
-	let user = await User.findOne(({email: req.body.email})).exec();
-	if(!user){
-		res.status(403).json({"err":"Wrong email"})
-	}
-	if(user.password === req.body.password){
-		let token = jwt.sign({ data: user._id }, process.env.JWT_SECRET);
-		res.status(200).json({token})
-	} else {
-		res.status(401).json({"err": "Wrong password"})
-	}
-}
-)
+
 
 // module.exports = router;
 // module.exports = authenticationMDW;
