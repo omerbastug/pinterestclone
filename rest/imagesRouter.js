@@ -31,6 +31,14 @@ async function addToRecents(item){
 	recents.enqueue(item);
 
 }
+imagesRouter.post("/addhomepage",(req,res)=>{
+	console.log(req.body);
+	addToRecents(req.body.item);
+	res.send("ok");
+})
+imagesRouter.get("/homepage",(req,res)=>{
+	res.json(recents.items)
+})
 // GOOGLE APIS
 const customsearch = google.customsearch("v1");
 
