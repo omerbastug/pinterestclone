@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 export const userRouter = Router();
 import jwt from "jsonwebtoken";
 
+
 export const authenticationMDW = (req,res,next) =>{
 	let path = req.path;
 	console.log(req.method +" "+ path);
@@ -39,8 +40,8 @@ let userSchema = new mongoose.Schema({
 	password: String,
 	fullname : String,
 	age :  Number,
-	posts : [{url : String, likes : [String]}]
-}, {"collection" : "Users"});
+	posts : [{url : {type:String,unique:true}, likes : [String]}]
+}, {"collection" : "users"});
 
 let User = new mongoose.model("User", userSchema)
 
@@ -65,9 +66,9 @@ userRouter.post("/makepost",(req,res)=>{
 	User.findById(res.get("_id"),(err,doc)=>{
 		if(!err){
 			doc.toObject();
-			if(!doc.posts){
-				doc.posts = new Array();
-			}
+			// if(!doc.posts){
+			// 	doc.posts = new Array();
+			// }
 			doc.posts.push({
 				url : req.body.url,
 				likes : new Array()
@@ -75,7 +76,7 @@ userRouter.post("/makepost",(req,res)=>{
 			doc.save((err) => {
 				if(err){ 
 					console.log(err)
-					res.status(500).json({"err" : "DB failure"})
+					res.status(500).json({"err" : "image already posted"})
 				}
 				else {
 					res.json({"success":"post made"})
@@ -84,6 +85,18 @@ userRouter.post("/makepost",(req,res)=>{
 		}
 	});
 });
+
+userRouter.get('/',(req,res)=>{
+	User.findById(res.get("_id"),
+	(err,doc)=>{
+		if(err) {
+			console.log(err);
+			res.status(500).json({"err":"user not found"})
+		} else {
+			res.status(200).json(doc)
+		}
+	});
+})
 userRouter.post("/login" , async (req,res)=> {
 	let user = await User.findOne(({email: req.body.email})).exec();
 	if(!user){
