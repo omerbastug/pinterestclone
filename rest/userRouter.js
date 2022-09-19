@@ -86,6 +86,29 @@ userRouter.post("/makepost",(req,res)=>{
 	});
 });
 
+userRouter.post("/likepost",(req,res)=>{
+	User.findById(req.body._id,
+		(err,doc)=>{
+			if(err){
+				console.log(err);
+				res.status(500).json({"err":"user not found"})
+			} else {
+				let i  = doc.posts.findIndex(element => {
+					return element.url === req.body.url;
+				})
+				doc.posts[i].likes.push(res.get("_id"))
+				doc.save((err) => {
+					if(err){ 
+						console.log(err)
+						res.status(500).json({"err" : "DB failure"})
+					}
+					else {
+						res.json({"success":"post made"})
+					}
+				})			
+			}
+		})
+})
 userRouter.get('/',(req,res)=>{
 	User.findById(res.get("_id"),
 	(err,doc)=>{
