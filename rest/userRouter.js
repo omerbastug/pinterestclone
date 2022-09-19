@@ -8,7 +8,7 @@ import fetch from "node-fetch";
 export const authenticationMDW = (req,res,next) =>{
 	let path = req.path;
 	console.log(req.method +" "+ path);
-	if(path === "/user/register" || path === "/user/login") {
+	if(path === "/images/homepage" || path === "/user/register" || path === "/user/login") {
 		return next();} 
 	else {
 		let token = req.headers.token;
@@ -17,7 +17,7 @@ export const authenticationMDW = (req,res,next) =>{
 				res.status(403).json({"err": "authentication failed"})
                 throw new Error("Unauthorized request")
     		}
-			console.log("JWT valid , "+ decoded.data) // bar
+			console.log("JWT valid , "+ decoded.data) 
 			res.set("_id", decoded.data)
 			next();
 			});
@@ -41,23 +41,28 @@ let userSchema = new mongoose.Schema({
 	password: String,
 	fullname : String,
 	age :  Number,
-	posts : [{url : {type:String,unique:true}, likes : [String]}]
-}, {"collection" : "users"});
+	posts : [{url : {type:String}, likes : [String]}]
+}, {"collection" : "newnew"});
 
 let User = new mongoose.model("User", userSchema)
+
+// login
 userRouter.post("/login" , async (req,res)=> {
 	let user = await User.findOne(({email: req.body.email})).exec();
 	if(!user){
 		res.status(403).json({"err":"Wrong email"})
 	}
 	if(user.password === req.body.password){
-		let token = jwt.sign({ data: user._id }, process.env.JWT_SECRET);
+		let token = jwt.sign({ data: user._id },
+			process.env.JWT_SECRET/*,
+			{ expiresIn: 60 * 5  - 5 minute expiration time }*/);
 		res.status(200).json({token})
 	} else {
 		res.status(401).json({"err": "Wrong password"})
 	}
 })
 
+// create user
 userRouter.post("/register", (req,res) => {
 	let {email,password,fullname,age} = req.body;
 	let user = new User({email,password,fullname,age});
@@ -68,13 +73,16 @@ userRouter.post("/register", (req,res) => {
 			//done(err)
 		} else {
 			console.log(data)
-			let token = jwt.sign({ data: data._id }, process.env.JWT_SECRET);
+			let token = jwt.sign({ data: data._id }, 
+				process.env.JWT_SECRET/*,
+				{ expiresIn: 60 * 5 - 5 minute expiration time }*/);
 			res.status(200).json({token})
 			//done(null,data)
 		}
 	})
 })
 
+// get user
 userRouter.get('/',(req,res)=>{
 	User.findById(res.get("_id"),
 	(err,doc)=>{
@@ -87,6 +95,20 @@ userRouter.get('/',(req,res)=>{
 	});
 })
 
+// get user info by any identifier
+userRouter.get('/param',(req,res)=>{
+	User.findOne(req.body.param,
+	(err,doc)=>{
+		if(err) {
+			console.log(err);
+			res.status(500).json({"err":"user not found"})
+		} else {
+			let {_id,posts,email} =doc
+			res.status(200).json({_id,posts,email})
+		}
+	});
+})
+// make post to user by id
 userRouter.post("/makepost",(req,res)=>{
 	User.findById(res.get("_id"),(err,doc)=>{
 		if(!err){
@@ -118,6 +140,7 @@ userRouter.post("/makepost",(req,res)=>{
 	});
 });
 
+// like a post
 userRouter.post("/likepost",(req,res)=>{
 	User.findById(req.body._id,
 		(err,doc)=>{
@@ -147,6 +170,7 @@ userRouter.post("/likepost",(req,res)=>{
 		})
 })
 
+// remove like from post
 userRouter.delete("/likepost",(req,res)=>{
 	User.findById(req.body._id,
 		(err,doc)=>{
@@ -179,7 +203,3 @@ userRouter.delete("/likepost",(req,res)=>{
 			}
 		})
 })
-
-
-// module.exports = router;
-// module.exports = authenticationMDW;
