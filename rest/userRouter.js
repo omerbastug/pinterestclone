@@ -2,6 +2,7 @@ import e, {Router} from "express";
 import mongoose from "mongoose";
 export const userRouter = Router();
 import jwt from "jsonwebtoken";
+import fetch from "node-fetch";
 
 
 export const authenticationMDW = (req,res,next) =>{
@@ -97,12 +98,19 @@ userRouter.post("/makepost",(req,res)=>{
 				url : req.body.url,
 				likes : new Array()
 			})
+			let post = doc.posts.slice(-1)[0] 
 			doc.save((err) => {
 				if(err){ 
 					console.log(err)
 					res.status(500).json({"err" : "image already posted"})
 				}
 				else {
+					fetch('http://localhost:4001/images/addhomepage',{
+						method : "POST",
+						headers : {token:req.headers.token, "Content-Type": "application/json"},
+						body : JSON.stringify({item: {post,userid: res.get("_id")} })
+					})			
+					console.log(post);
 					res.json({"success":"post made"})
 				}
 		})
