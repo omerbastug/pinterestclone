@@ -151,7 +151,7 @@ userRouter.post("/likepost",(req,res)=>{
 	.then(doc =>{
 			for(let i = 0;i< doc[0].posts.length; i++){// iterate over posts
 				if(doc[0].posts[i]._id == req.body.post_id){ // find post with id
-					let like = doc[0].posts[i].likes.indexOf(res.get("_id"));// check if already liked
+					let like = doc[0].posts[i].likes.findIndex(el => el.user_id === res.get("_id"));// check if already liked
 					if(like === -1){
 						doc[0].posts[i].likes.push({user_id: res.get("_id"), date: new Date()})
 						doc[0].save((err) => {
