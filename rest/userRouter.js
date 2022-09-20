@@ -178,34 +178,34 @@ userRouter.post("/likepost",(req,res)=>{
 
 // remove like from post
 userRouter.delete("/likepost",(req,res)=>{
-	User.findById(req.body._id,
-		(err,doc)=>{
-			if(err){
-				console.log(err);
-				res.status(400).json({"err":"user not found"})
-			} else {
-				let i  = doc.posts.findIndex(element => {
-					return element.url === req.body.url;
-				})
-				if(i!==-1){
-					let likei = doc.posts[i].likes.indexOf(res.get("_id"))
-					if (likei !== -1) {
-						doc.posts[i].likes.splice(likei, 1);
-						doc.save((err) => {
-							if(err){ 
-								console.log(err)
-								res.status(500).json({"err" : "DB failure"})
-							}
-							else {
-								res.json({"success":"like deleted"})
-							}
-						})	
-					} else {
-						res.status(400).json({"err":"Post not liked"})
-					}	
-				} else {
-					res.status(400).json({"err":"Post not found, wrong url"})
+	User
+	.find( { "posts": { $elemMatch: { _id: req.body.post_id} } }).exec()
+	.then(doc =>{
+		let i  = doc[0].posts.findIndex(element => {
+			return element._id == req.body.post_id;
+		})
+		console.log(doc[0].posts[i].likes);
+		let likei = doc[0].posts[i].likes.findIndex(el => el.user_id === res.get("_id"))
+		console.log(likei);
+		if (likei !== -1) {
+			doc[0].posts[i].likes.splice(likei, 1);
+			doc[0].save((err) => {
+				if(err){ 
+					console.log(err)
+					res.status(500).json({"err" : "DB failure"})
+				}
+				else {
+					res.json({"success":"like deleted"})
+				}
+			})	
+		} else {
+			res.status(400).json({"err":"Post not liked"})
+		}	
+	})
+	.catch(err => {
+		console.log(err);
+		res.status(400).json({"err":"Post not found, wrong url"})
 				}	
 			}
-		})
+	})
 })
