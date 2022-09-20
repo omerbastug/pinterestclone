@@ -152,16 +152,22 @@ userRouter.post("/likepost",(req,res)=>{
 					return element.url === req.body.url;
 				})
 				if(i!==-1){
-					doc.posts[i].likes.push(res.get("_id"))
-					doc.save((err) => {
-						if(err){ 
-							console.log(err)
-							res.status(500).json({"err" : "DB failure"})
-						}
-						else {
-							res.json({"success":"post made"})
-						}
-					})	
+					let like = doc.posts[i].likes.indexOf(res.get("_id"));
+					if(like === -1){
+						doc.posts[i].likes.push(res.get("_id"))
+						doc.save((err) => {
+							if(err){ 
+								console.log(err)
+								res.status(500).json({"err" : "DB failure"})
+							}
+							else {
+								res.json({"success":"post made"})
+							}
+						})	
+					} else {
+						res.json({"err": "Post already liked"})
+					}
+					
 				} else {
 					res.status(400).json({"err":"Post not found, wrong url"})
 				}
