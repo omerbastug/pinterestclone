@@ -145,7 +145,6 @@ userRouter.post("/makepost",(req,res)=>{
 });
 
 userRouter.post("/likepost",(req,res)=>{
-	console.log(req.body);
 	User
 	.find( { "posts": { $elemMatch: { _id: req.body.post_id} } }).exec()
 	.then(doc =>{
@@ -205,7 +204,5 @@ userRouter.delete("/likepost",(req,res)=>{
 	.catch(err => {
 		console.log(err);
 		res.status(400).json({"err":"Post not found, wrong url"})
-				}	
-			}
 	})
 })
