@@ -43,7 +43,7 @@ let userSchema = new mongoose.Schema({
 	age :  Number,
 	posts : [{
 		url : {type:String},
-		likes : [{id : String, date: Date}],
+		likes : [{user_id : String, date: Date}],
 		date : Date}]
 }, {"collection" : "users"});
 
@@ -144,22 +144,17 @@ userRouter.post("/makepost",(req,res)=>{
 	});
 });
 
-// like a post
 userRouter.post("/likepost",(req,res)=>{
-	User.findById(req.body._id,
-		(err,doc)=>{
-			if(err){
-				console.log(err);
-				res.status(400).json({"err":"user not found"})
-			} else {
-				let i  = doc.posts.findIndex(element => {
-					return element.url === req.body.url;
-				})
-				if(i!==-1){
-					let like = doc.posts[i].likes.indexOf(res.get("_id"));
+	console.log(req.body);
+	User
+	.find( { "posts": { $elemMatch: { _id: req.body.post_id} } }).exec()
+	.then(doc =>{
+			for(let i = 0;i< doc[0].posts.length; i++){// iterate over posts
+				if(doc[0].posts[i]._id == req.body.post_id){ // find post with id
+					let like = doc[0].posts[i].likes.indexOf(res.get("_id"));// check if already liked
 					if(like === -1){
-						doc.posts[i].likes.push({id: res.get("_id"), date: new Date()})
-						doc.save((err) => {
+						doc[0].posts[i].likes.push({user_id: res.get("_id"), date: new Date()})
+						doc[0].save((err) => {
 							if(err){ 
 								console.log(err)
 								res.status(500).json({"err" : "DB failure"})
@@ -171,13 +166,14 @@ userRouter.post("/likepost",(req,res)=>{
 					} else {
 						res.json({"err": "Post already liked"})
 					}
-					
-				} else {
-					res.status(400).json({"err":"Post not found, wrong url"})
+					return;
 				}
-						
-			}
-		})
+			}			
+	})
+	.catch(err => {
+		console.log(err);
+		res.status(400).json({"err":"post not found"})
+	})
 })
 
 // remove like from post
