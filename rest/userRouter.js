@@ -41,8 +41,11 @@ let userSchema = new mongoose.Schema({
 	password: String,
 	fullname : String,
 	age :  Number,
-	posts : [{url : {type:String}, likes : [String]}]
-}, {"collection" : "newnew"});
+	posts : [{
+		url : {type:String},
+		likes : [{id : String, date: Date}],
+		date : Date}]
+}, {"collection" : "users"});
 
 let User = new mongoose.model("User", userSchema)
 
@@ -118,7 +121,8 @@ userRouter.post("/makepost",(req,res)=>{
 			// }
 			doc.posts.push({
 				url : req.body.url,
-				likes : new Array()
+				likes : new Array(),
+				date : new Date()
 			})
 			let post = doc.posts.slice(-1)[0] 
 			doc.save((err) => {
@@ -154,7 +158,7 @@ userRouter.post("/likepost",(req,res)=>{
 				if(i!==-1){
 					let like = doc.posts[i].likes.indexOf(res.get("_id"));
 					if(like === -1){
-						doc.posts[i].likes.push(res.get("_id"))
+						doc.posts[i].likes.push({id: res.get("_id"), date: new Date()})
 						doc.save((err) => {
 							if(err){ 
 								console.log(err)
