@@ -23,5 +23,24 @@ export default class Queue {
     isEmpty() {
       return this.rear == 0;
     }
+    delete(index){
+      if(index<this.front || index >= this.rear){
+        throw new Error("Index not in queue")
+      }
+      if(index === this.front){
+        delete this.items[this.front++]
+        return;
+      }
+      if(index === (this.rear - 1)){
+        delete this.items[this.rear - 1];
+        this.rear--;
+        return;
+      }  
+      for(let i = index;i<(this.rear-1); i++){
+        this.items[i] = this.items[i+1]
+      }
+      delete this.items[this.rear - 1 ];
+      this.rear--;
+    }
   }
   //module.exports = Queue;
