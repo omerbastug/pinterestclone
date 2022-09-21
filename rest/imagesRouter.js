@@ -31,13 +31,51 @@ async function addToRecents(item){
 	recents.enqueue(item);
 
 }
+async function likeRecentsPost(post_id,like){
+	for(let i = recents.front;i<recents.rear; i++){
+		if(recents.items[i].post._id === post_id){
+			let index = recents.items[i].post.likes.findIndex(el => el.user_id === like.user_id);
+			if(index === -1){
+				recents.items[i].post.likes.push(like)
+			} else {
+				console.log("Post liked, at index "+index);
+			}
+			console.log(recents);
+		}
+		return;
+	}
+	console.log("post not found");
+}
+async function deletelikeRecentsPost(post_id,like){
+	for(let i = recents.front;i<recents.rear; i++){
+		if(recents.items[i].post._id === post_id){
+			let index = recents.items[i].post.likes.findIndex(el => el.user_id === like.user_id);
+			if(index === -1){
+				console.log("Post not liked");
+			} else {
+				recents.items[i].post.likes.splice(index, 1)
+			}
+		}
+		return;
+	}
+	console.log("post not found");
+}
 imagesRouter.post("/addhomepage",(req,res)=>{
-	console.log(req.body);
+	//console.log(req.body);
 	addToRecents(req.body.item);
-	res.send("ok");
+	res.send("recieved");
 })
 imagesRouter.get("/homepage",(req,res)=>{
 	res.json(recents.items)
+})
+imagesRouter.post("/homepage/like",(req,res)=>{
+	req.body.like.user_id = res.get("_id")
+	likeRecentsPost(req.body.post_id,req.body.like);
+	res.send("recieved")
+})
+imagesRouter.delete("/homepage/like",(req,res)=>{
+	deletelikeRecentsPost(req.body.post_id,req.body.like);
+	res.send("recieved")
 })
 // GOOGLE APIS
 const customsearch = google.customsearch("v1");

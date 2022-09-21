@@ -152,13 +152,19 @@ userRouter.post("/likepost",(req,res)=>{
 				if(doc[0].posts[i]._id == req.body.post_id){ // find post with id
 					let like = doc[0].posts[i].likes.findIndex(el => el.user_id === res.get("_id"));// check if already liked
 					if(like === -1){
-						doc[0].posts[i].likes.push({user_id: res.get("_id"), date: new Date()})
+						let like = {user_id: res.get("_id"), date: new Date()};
+						doc[0].posts[i].likes.push(like)
 						doc[0].save((err) => {
 							if(err){ 
 								console.log(err)
 								res.status(500).json({"err" : "DB failure"})
 							}
 							else {
+								fetch('http://localhost:4001/images/homepage/like',{
+									method : "POST",
+									headers : {token:req.headers.token, "Content-Type": "application/json"},
+									body : JSON.stringify({post_id : req.body.post_id,like})
+								})
 								res.json({"success":"post made"})
 							}
 						})	
@@ -194,6 +200,11 @@ userRouter.delete("/likepost",(req,res)=>{
 					res.status(500).json({"err" : "DB failure"})
 				}
 				else {
+					fetch('http://localhost:4001/images/homepage/like',{
+						method : "DELETE",
+						headers : {token:req.headers.token, "Content-Type": "application/json"},
+						body : JSON.stringify({post_id : req.body.post_id,like:{user_id:res.get("_id")}})
+					})
 					res.json({"success":"like deleted"})
 				}
 			})	
