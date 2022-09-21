@@ -60,7 +60,11 @@ async function deletelikeRecentsPost(post_id,like){
 	}
 	console.log("post not found");
 }
-imagesRouter.post("/addhomepage",(req,res)=>{
+imagesRouter.get("/homepage",(req,res)=>{
+	res.json(recents.items)
+})
+
+imagesRouter.post("/homepage/post",(req,res)=>{
 	//console.log(req.body);
 	addToRecents(req.body.item);
 	res.send("recieved");

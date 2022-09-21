@@ -131,10 +131,10 @@ userRouter.post("/makepost",(req,res)=>{
 					res.status(500).json({"err" : "image already posted"})
 				}
 				else {
-					fetch('http://localhost:4001/images/addhomepage',{
+					fetch('http://localhost:4001/images/homepage/post',{
 						method : "POST",
 						headers : {token:req.headers.token, "Content-Type": "application/json"},
-						body : JSON.stringify({item: {post,userid: res.get("_id")} })
+						body : JSON.stringify({item: {post,user_id: res.get("_id")} })
 					})			
 					console.log(post);
 					res.json({"success":"post made"})
