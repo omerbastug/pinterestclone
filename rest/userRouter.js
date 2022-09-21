@@ -8,7 +8,10 @@ import fetch from "node-fetch";
 export const authenticationMDW = (req,res,next) =>{
 	let path = req.path;
 	console.log(req.method +" "+ path);
-	if(path === "/images/homepage" || path === "/user/register" || path === "/user/login") {
+	if((path.startsWith("/images/query/") && req.headers.token===undefined) || 
+	path === "/images/homepage" || 
+	path === "/user/register" || 
+	path === "/user/login") {
 		return next();} 
 	else {
 		let token = req.headers.token;

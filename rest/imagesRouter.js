@@ -4,6 +4,7 @@ import Queue from '../public/queue.js';
 import {google} from "googleapis";
 import {Router} from "express";
 import fetch from "node-fetch";
+import mongoose from "mongoose";
 async function getImageMetadata(url) {
     try { //* gets the image from url in the arraybuffer
 		const response = await axios.get(url, {
@@ -22,6 +23,15 @@ async function getImageMetadata(url) {
 };
 
 export const imagesRouter = Router(); 
+
+let querySchema = new mongoose.Schema({
+	q: String,
+	user_id: String,
+	date : Date,
+	response : {type: Array}
+}, {"collection" : "queries"});
+
+let Query = new mongoose.model("Query", querySchema)
 
 let recents = new Queue();
 async function addToRecents(item){
@@ -95,16 +105,16 @@ imagesRouter.delete("/homepage/like",(req,res)=>{
 // GOOGLE APIS
 const customsearch = google.customsearch("v1");
 
-imagesRouter.get("/query/random/:q",async (req,res)=>{
-	let response = await fetch("http://localhost:4001/images/v1/query/"+req.params.q,{
-		method: 'GET',
-		headers: {token: req.headers.token},
-	});
-	let items = await response.json();
+// imagesRouter.get("/query/random/:q",async (req,res)=>{
+// 	let response = await fetch("http://localhost:4001/images/v1/query/"+req.params.q,{
+// 		method: 'GET',
+// 		headers: {token: req.headers.token},
+// 	});
+// 	let items = await response.json();
 	
-	let i = Math.floor(Math.random() * 10);
-	res.json({image: items.images[i]})
-})
+// 	let i = Math.floor(Math.random() * 10);
+// 	res.json({image: items.images[i]})
+// })
 
 imagesRouter.get("/query/:q", (req,res)=>{
 	const q = req.params.q;
@@ -144,6 +154,16 @@ imagesRouter.get("/query/:q", (req,res)=>{
 			const data = {
 				images: resp
 			}
+			let query = new Query({
+				"q": q,
+				date: new Date(),
+				response: resp,
+				user_id: res.get("_id")
+			})
+			query.save((err,data)=>{
+				if(err) console.log(err);
+				else console.log("success " + data);
+			})
 			res.status(200).json(data);
 		})
 		.catch((err) => {
