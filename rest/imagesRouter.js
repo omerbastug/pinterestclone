@@ -29,7 +29,17 @@ async function addToRecents(item){
 		recents.dequeue();
 	} 
 	recents.enqueue(item);
-
+}
+async function deletefromRecents(post_id,user_id){
+	for(let i = recents.front;i<recents.rear; i++){
+		if(recents.items[i].post._id === post_id){
+			if(recents.items[i].user_id === user_id){
+				recents.delete(i);
+			} else {
+				console.log("unauthorized");
+			}
+		}
+	}
 }
 async function likeRecentsPost(post_id,like){
 	for(let i = recents.front;i<recents.rear; i++){
@@ -69,8 +79,9 @@ imagesRouter.post("/homepage/post",(req,res)=>{
 	addToRecents(req.body.item);
 	res.send("recieved");
 })
-imagesRouter.get("/homepage",(req,res)=>{
-	res.json(recents.items)
+imagesRouter.delete("/homepage/post",(req,res)=>{
+	deletefromRecents(req.body.post_id,res.get("_id"))
+	res.send("recieved");
 })
 imagesRouter.post("/homepage/like",(req,res)=>{
 	req.body.like.user_id = res.get("_id")

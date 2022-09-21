@@ -143,6 +143,41 @@ userRouter.post("/makepost",(req,res)=>{
 		}
 	});
 });
+userRouter.delete("/deletepost",(req,res)=>{
+	User.findById(res.get("_id"),(err,doc)=>{
+		if(!err){
+			doc.toObject();
+			// if(!doc.posts){
+			// 	doc.posts = new Array();
+			// }
+			let found = false;
+			for(let i = 0;i< doc.posts.length; i++){// iterate over posts
+				if(doc.posts[i]._id == req.body.post_id){ // find post with id
+					found = true;
+					doc.posts.splice(i,1)
+					doc.save((err) => {
+						if(err){ 
+							console.log(err)
+							res.status(500).json({"err" : "DB error"})
+						}
+						else {
+							fetch('http://localhost:4001/images/homepage/post',{
+								method : "DELETE",
+								headers : {token:req.headers.token, "Content-Type": "application/json"},
+								body : JSON.stringify({post_id: req.body.post_id})
+							})			
+							res.json({"success":"post deleted"})
+						}
+					})
+					break;
+				}
+			}
+			if(!found) res.json({"err":"Post not found"})			
+		} else {
+			res.status(400).json({"err":"user not found"})
+		}
+	});
+});
 
 userRouter.post("/likepost",(req,res)=>{
 	User
