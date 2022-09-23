@@ -2,8 +2,10 @@ import {Router} from "express";
 import mongoose from "mongoose";
 export const userRouter = Router();
 import jwt from "jsonwebtoken";
+import multer from "multer";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+import e from "cors";
 dotenv.config();
 
 
@@ -56,11 +58,28 @@ let userSchema = new mongoose.Schema({
 		likes : [{user_id : String, date: Date}],
 		date : Date
 	}],
-	googleUser : Boolean
+	googleUser : Boolean,
+	profilePicture : {
+		_id : mongoose.Types.ObjectId, 
+		image : {
+			buff : Buffer,
+			contentType: String
+		}
+	}
 }, {"collection" : "users"});
 
 export let User = new mongoose.model("User", userSchema)
 
+const myStorage = multer.diskStorage({
+	destination: "profilePictures",
+	filename: (req,file,cb) =>{
+		cb(null,file.originalname)
+	}
+})
+
+const upload = multer({
+	storage: myStorage
+}).single("testImage")
 // login
 userRouter.post("/login" , async (req,res)=> {
 	let user = await User.findOne(({email: req.body.email})).exec();
@@ -262,5 +281,39 @@ userRouter.delete("/likepost",(req,res)=>{
 	.catch(err => {
 		console.log(err);
 		res.status(400).json({"err":"Post not found, wrong url"})
+	})
+})
+
+userRouter.post("/upload/pp", (req,res)=>{
+	upload(req,res,(err) => {
+		if(err) {
+			console.log(err);
+			res.status(500).json({"err":"sverr"})
+		} else {
+			let image = {
+				buff : req.file.filename,
+				contentType: "image/png"
+			}
+			let pp = {
+				_id : new mongoose.Types.ObjectId(),
+				image
+			}
+			console.log(pp);
+			User.findById(res.get("_id")).exec().then(doc => {
+				console.log(doc);
+				doc.profilePicture = pp;
+				doc.save((err)=>{
+					if(err) {
+						console.log(err);
+						res.json({err})
+					} else { 
+						res.json({doc})
+					}
+				})
+			}).catch((err)=>{
+				console.log(err);
+				res.json({"err":"user not found"})
+			})
+		}
 	})
 })
