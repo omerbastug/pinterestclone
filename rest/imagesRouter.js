@@ -60,7 +60,7 @@ async function likeRecentsPost(post_id,like){
 			} else {
 				console.log("Post liked, at index "+index);
 			}
-			console.log(recents);
+			//console.log(recents);
 		}
 		return;
 	}
@@ -162,7 +162,7 @@ imagesRouter.get("/query/:q", (req,res)=>{
 			})
 			query.save((err,data)=>{
 				if(err) console.log(err);
-				else console.log("success " + data);
+				else console.log("success " /*+ data*/);
 			})
 			res.status(200).json(data);
 		})

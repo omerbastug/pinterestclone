@@ -1,20 +1,27 @@
-import e, {Router} from "express";
+import {Router} from "express";
 import mongoose from "mongoose";
 export const userRouter = Router();
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
+import dotenv from "dotenv";
+dotenv.config();
 
 
 export const authenticationMDW = (req,res,next) =>{
 	let path = req.path;
 	console.log(req.method +" "+ path);
-	if((path.startsWith("/images/query/") && req.headers.token===undefined) || 
+	let token = req.headers["authorization"];
+	if((path.startsWith("/images/query/") && token===undefined) || 
 	path === "/images/homepage" || 
 	path === "/user/register" || 
-	path === "/user/login") {
+	path === "/user/login" ||
+	path === "/login" ||
+	path === "/google/auth/getdata/" ||
+	path === "/google/auth/geturl" ||
+	path.startsWith("/static/")) {
 		return next();} 
 	else {
-		let token = req.headers.token;
+		
 		jwt.verify(token, process.env.JWT_SECRET, function(err, decoded) {
 			if(err) {
 				res.status(403).json({"err": "authentication failed"})
@@ -47,10 +54,12 @@ let userSchema = new mongoose.Schema({
 	posts : [{
 		url : {type:String},
 		likes : [{user_id : String, date: Date}],
-		date : Date}]
+		date : Date
+	}],
+	googleUser : Boolean
 }, {"collection" : "users"});
 
-let User = new mongoose.model("User", userSchema)
+export let User = new mongoose.model("User", userSchema)
 
 // login
 userRouter.post("/login" , async (req,res)=> {
@@ -62,7 +71,7 @@ userRouter.post("/login" , async (req,res)=> {
 		let token = jwt.sign({ data: user._id },
 			process.env.JWT_SECRET/*,
 			{ expiresIn: 60 * 5  - 5 minute expiration time }*/);
-		res.status(200).json({token})
+		res.status(200).json({"Authorization":token})
 	} else {
 		res.status(401).json({"err": "Wrong password"})
 	}
@@ -71,7 +80,7 @@ userRouter.post("/login" , async (req,res)=> {
 // create user
 userRouter.post("/register", (req,res) => {
 	let {email,password,fullname,age} = req.body;
-	let user = new User({email,password,fullname,age});
+	let user = new User({email,password,fullname,age,googleUser:false});
 	user.save((err,data)=>{
 		if(err) {
 			console.log(err)
@@ -82,7 +91,7 @@ userRouter.post("/register", (req,res) => {
 			let token = jwt.sign({ data: data._id }, 
 				process.env.JWT_SECRET/*,
 				{ expiresIn: 60 * 5 - 5 minute expiration time }*/);
-			res.status(200).json({token})
+			res.status(200).json({"Authorization":token})
 			//done(null,data)
 		}
 	})

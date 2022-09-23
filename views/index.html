@@ -5,7 +5,44 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image search</title>
-    <script src="service.js"></script>
+    <link rel="icon" href="/static/images/icon.png">
+    
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script> // check log in
+        let loggedIn= false;
+        const params = new Proxy(new URLSearchParams(window.location.search), {
+            get: (searchParams, prop) => searchParams.get(prop),
+            });
+        if(params.auth) {
+            localStorage.setItem("Authorization",params.auth)
+        }
+        $.ajax({
+            method:"GET",
+            url: "/user",
+            beforeSend: function(xhr){
+                xhr.setRequestHeader('Authorization', localStorage.getItem('Authorization'));
+            },
+            success: (data, textStatus, xhr) => {
+                loggedIn = true;
+                console.log(xhr.status);
+                console.log(data);
+                console.log("LOGGED IN");
+            },
+            error: (err, textStatus, xhr) => {
+                console.log(xhr.status);
+                loggedIn = false;
+                console.log("Not LOGGED IN");
+            }
+        })
+    </script>
+
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- js files -->
+    <script src="/static/js/service.js"></script>
 </head>
 <body>
     <div class="container text-align-center">

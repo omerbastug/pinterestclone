@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/images/icon.png">
+    <title>Login</title>
+    
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        const params = new Proxy(new URLSearchParams(window.location.search), {
+            get: (searchParams, prop) => searchParams.get(prop),
+            });
+        if(params.err == "not google"){
+            alert("Account already created. \n Sign in with password :3 ")
+        }
+    </script>
+    <!-- Bootstrap  -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+</head>
+<body>
+    <script>
+        function Gsignin(){
+            location.replace("http://localhost:4001/google/auth/geturl")
+        }
+    </script>
+    <div class="container justify-content-center w-100">
+        <h1>Login</h1>
+        <div class="row">
+            <div class="col-md-12">
+            <a class="btn btn-lg btn-google btn-block text-align-center text-uppercase btn-outline shadow p-3 mb-5 bg-white rounded" onclick="Gsignin()">
+                <img src="https://img.icons8.com/color/16/000000/google-logo.png"> Sign in</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

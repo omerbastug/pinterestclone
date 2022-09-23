@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import jwt from "jsonwebtoken";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // MongoDB connection 
@@ -28,11 +28,16 @@ app.use(bodyParser.json());
 import cors from "cors";
 app.use(cors())
 
-app.use(express.static('public'))
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-});
 
+app.use("/static",express.static('public'))
+app.get('/', (req, res) => {
+	console.log(req.query);
+  	res.sendFile(__dirname + '/views/index.html')
+});
+app.get('/login', (req, res) => {
+	console.log(req.query);
+	res.sendFile(__dirname + '/views/login.html')
+  });
 
 import {authenticationMDW,userRouter} from "./rest/userRouter.js"
 import {imagesRouter} from "./rest/imagesRouter.js"
@@ -42,11 +47,10 @@ app.use(authenticationMDW);
 
 app.use("/images",imagesRouter);
 app.use("/user",userRouter);
-// app.use((err, req, res, next) => {
-// 	res.status(400).send(err.message)
-//   })
 
 
+import { googleAuthRouter } from './rest/googleOAuth.js';
+app.use("/google/auth",googleAuthRouter);
 
 const port = process.env.PORT || 5000;
 app.listen(
