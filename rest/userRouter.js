@@ -317,3 +317,13 @@ userRouter.post("/upload/pp", (req,res)=>{
 		}
 	})
 })
+
+userRouter.get("/profilepicture/:id",async (req,res)=>{
+	let user = await User.findOne(({_id: req.params.id})).exec();
+	if(!user){
+		res.status(403).json({"err":"User not found"})
+	} else {
+		res.send(user.profilePicture.image)
+	}
+	console.log(user);
+})
