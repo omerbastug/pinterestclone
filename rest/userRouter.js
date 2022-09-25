@@ -5,10 +5,14 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-import e from "cors";
 dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fileUpload from "express-fileupload"
 
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 export const authenticationMDW = (req,res,next) =>{
 	let path = req.path;
 	console.log(req.method +" "+ path);
@@ -20,7 +24,8 @@ export const authenticationMDW = (req,res,next) =>{
 	path === "/login" ||
 	path === "/google/auth/getdata/" ||
 	path === "/google/auth/geturl" ||
-	path.startsWith("/static/")) {
+	path.startsWith("/static/") ||
+	path.startsWith("/user/profilepicture/")) {
 		return next();} 
 	else {
 		
@@ -62,8 +67,10 @@ let userSchema = new mongoose.Schema({
 	profilePicture : {
 		_id : mongoose.Types.ObjectId, 
 		image : {
-			buff : Buffer,
-			contentType: String
+			path  : String,
+			mimetype: String,
+			size : Number,
+			name : String
 		}
 	}
 }, {"collection" : "users"});
@@ -71,7 +78,7 @@ let userSchema = new mongoose.Schema({
 export let User = new mongoose.model("User", userSchema)
 
 const myStorage = multer.diskStorage({
-	destination: "profilePictures",
+	destination: "./profilePictures",
 	filename: (req,file,cb) =>{
 		cb(null,file.originalname)
 	}
@@ -284,46 +291,53 @@ userRouter.delete("/likepost",(req,res)=>{
 	})
 })
 
-userRouter.post("/upload/pp", (req,res)=>{
-	upload(req,res,(err) => {
-		if(err) {
-			console.log(err);
-			res.status(500).json({"err":"sverr"})
-		} else {
-			let image = {
-				buff : req.file.filename,
-				contentType: "image/png"
+userRouter.post('/upload/pp', fileUpload()  , (req, res) => {
+    // Get the file that was set to our field named "image"
+    const image  = req.files.testImage;
+	
+	console.log(req.files);
+    // If no image submitted, exit
+    if (!image) return res.sendStatus(400);
+	if(image.mimetype !== "image/jpeg" && image.mimetype !== "image/png") return res.sendStatus(400)
+	let mimetypepath = "."+image.mimetype.split("/")[1]
+	User.findById(res.get("_id")).exec().then(doc => {
+		console.log(doc);
+		doc.profilePicture = {
+			_id : mongoose.Types.ObjectId(),
+			image : {
+				path : __dirname + '/profilePictures/' + res.get("_id")+ mimetypepath,
+				mimetype: image.mimetype,
+				size: image.size,
+				name: image.name
 			}
-			let pp = {
-				_id : new mongoose.Types.ObjectId(),
-				image
-			}
-			console.log(pp);
-			User.findById(res.get("_id")).exec().then(doc => {
-				console.log(doc);
-				doc.profilePicture = pp;
-				doc.save((err)=>{
-					if(err) {
-						console.log(err);
-						res.json({err})
-					} else { 
-						res.json({doc})
-					}
-				})
-			}).catch((err)=>{
+		};
+		doc.save((err)=>{
+			if(err) {
 				console.log(err);
-				res.json({"err":"user not found"})
-			})
-		}
+				res.json({err})
+			} else { 
+				// Move the uploaded image to our upload folder
+				image.mv(__dirname + '/profilePictures/' + res.get("_id")+ mimetypepath);
+
+				res.sendStatus(200);
+			}
+		})
+	}).catch((err)=>{
+		console.log(err);
+		res.json({"err":"user not found"})
 	})
-})
+
+});
 
 userRouter.get("/profilepicture/:id",async (req,res)=>{
 	let user = await User.findOne(({_id: req.params.id})).exec();
-	if(!user){
-		res.status(403).json({"err":"User not found"})
+	let path = user.profilePicture.image.path
+	console.log(path);
+	if(!path){
+		res.status(400).json({"err":"Picture not found"})
 	} else {
-		res.send(user.profilePicture.image)
+		 return res.sendFile(path)
 	}
 	console.log(user);
+	res.send(null)
 })
